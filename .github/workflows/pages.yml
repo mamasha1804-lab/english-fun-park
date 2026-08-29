@@ -24,57 +24,47 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build single-page game
+      - name: Build direct static game
         shell: bash
         run: |
           set -euo pipefail
           rm -rf dist
-          mkdir -p dist
+          mkdir -p dist/assets
           cat app/part1.txt app/part2.txt app/part3.txt app/part4.txt > dist/index.html
+
           python3 - <<'PY'
           from pathlib import Path
           import base64, re
 
-          p = Path('dist/index.html')
-          html = p.read_text(encoding='utf-8')
+          # Each homeXX.txt file is a separately encoded binary slice. Decoding each
+          # slice first and only then concatenating the binary data preserves the JPEG.
+          pieces=[]
+          for i in range(1,5):
+              s=Path(f'assets/home0{i}.txt').read_text(encoding='utf-8').strip()
+              pieces.append(base64.b64decode(s, validate=True))
+          image=b''.join(pieces)
+          Path('dist/assets/home.jpg').write_bytes(image)
+          if not image.startswith(b'\xff\xd8'):
+              raise SystemExit('Home image is not a JPEG')
+          if not image.endswith(b'\xff\xd9'):
+              raise SystemExit('Home image JPEG is incomplete')
 
-          # Gameplay fixes already discussed: reset score on each replay and do not skip
-          # the Game 5 results screen before the child presses FINAL PRIZE.
-          html = html.replace(
-              'function startGame(game){state.round=0;',
-              'function startGame(game){state.round=0;state._score=0;'
-          )
-          html = html.replace("; if(game==='g5') setTimeout(()=>show('final'),700);", ';')
+          p=Path('dist/index.html')
+          html=p.read_text(encoding='utf-8')
+          html=html.replace('function startGame(game){state.round=0;', 'function startGame(game){state.round=0;state._score=0;')
+          html=html.replace("; if(game==='g5') setTimeout(()=>show('final'),700);", ';')
 
-          # The approved home artwork was stored as four Base64 fragments. The old
-          # browser-side concatenation was the source of the blue screen: the fragment
-          # padding made the combined string invalid in Samsung Browser. Rebuild and
-          # validate the JPEG at deploy time, then embed it directly into the HTML.
-          chunks = [Path(f'assets/home0{i}.txt').read_text(encoding='utf-8').strip() for i in range(1,5)]
-          joined = ''.join(c.rstrip('=') for c in chunks)
-          joined += '=' * ((4 - len(joined) % 4) % 4)
-          data = base64.b64decode(joined, validate=True)
-          if not data.startswith(b'\xff\xd8'):
-              raise SystemExit('Home artwork does not start with JPEG marker')
-          if not data.endswith(b'\xff\xd9'):
-              raise SystemExit('Home artwork does not end with JPEG marker')
+          # Replace the 1x1 placeholder with the validated artwork file.
+          placeholder='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='
+          if placeholder in html:
+              html=html.replace(placeholder, 'assets/home.jpg', 1)
+          else:
+              html=html.replace('src="assets/home.png"', 'src="assets/home.jpg"', 1)
 
-          old_pixel = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='
-          new_image = 'data:image/jpeg;base64,' + joined
-          if old_pixel not in html:
-              raise SystemExit('Home image placeholder not found')
-          html = html.replace(old_pixel, new_image, 1)
-
-          # Remove the obsolete runtime loader for the four image fragments.
-          html = re.sub(
-              r'<script>\s*\(async\(\)=>\{try\{const ps=\[\];for\(let i=1;i<=4;i\+\+\).*?</script>',
-              '',
-              html,
-              flags=re.S
-          )
-
+          # Remove obsolete browser-side Base64 fragment loader. It is no longer needed.
+          html=re.sub(r'<script>\s*\(async\(\)=>\{try\{const ps=\[\];for\(let i=1;i<=4;i\+\+\).*?</script>', '', html, flags=re.S)
           p.write_text(html, encoding='utf-8')
-          print('Embedded approved home JPEG:', len(data), 'bytes')
+          print('Home JPEG rebuilt successfully:', len(image), 'bytes')
           PY
 
       - name: Validate complete game
@@ -83,40 +73,37 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          import base64, re
+          import re
 
-          html = Path('dist/index.html').read_text(encoding='utf-8')
-          required = [
-              'English Fun Park', 'Учимся с Ларисой Коротаевой',
-              'HELLO CAROUSEL', 'NAME BALLOONS', 'ABC SHOOTER',
-              'WORD COASTER', 'MYSTERY BOX', 'FINAL PRIZE',
-              'ant', 'bed', 'cat', 'dog', 'egg', 'flag', 'glass', 'horse',
-              'id="home"', 'id="g1"', 'id="g2"', 'id="g3"',
-              'id="g4"', 'id="g5"', 'id="final"',
-              'function startGame(game){state.round=0;state._score=0;'
+          html=Path('dist/index.html').read_text(encoding='utf-8')
+          image=Path('dist/assets/home.jpg').read_bytes()
+
+          required=[
+            'English Fun Park','Учимся с Ларисой Коротаевой',
+            'HELLO CAROUSEL','NAME BALLOONS','ABC SHOOTER','WORD COASTER','MYSTERY BOX','FINAL PRIZE',
+            'ant','bed','cat','dog','egg','flag','glass','horse',
+            'id="home"','id="g1"','id="g2"','id="g3"','id="g4"','id="g5"','id="final"',
+            'function startGame(game){state.round=0;state._score=0;'
           ]
-          missing = [x for x in required if x not in html]
+          missing=[x for x in required if x not in html]
           if missing:
-              raise SystemExit('Missing required content: ' + ', '.join(missing))
+              raise SystemExit('Missing required game content: '+', '.join(missing))
           if '<iframe' in html.lower():
-              raise SystemExit('Published game must not contain an iframe')
-          if 'assets/home01.txt' in html or 'assets/home02.txt' in html:
-              raise SystemExit('Obsolete runtime home-image loader is still present')
+              raise SystemExit('Unexpected iframe in deployed game')
+          if 'assets/home01.txt' in html or 'assets/home02.txt' in html or 'assets/home03.txt' in html or 'assets/home04.txt' in html:
+              raise SystemExit('Obsolete home-image loader remains')
+          if 'src="assets/home.jpg"' not in html:
+              raise SystemExit('Home image reference is missing')
+          if not (image.startswith(b'\xff\xd8') and image.endswith(b'\xff\xd9')):
+              raise SystemExit('Home JPEG failed final validation')
 
-          m = re.search(r'data:image/jpeg;base64,([^\"\']+)', html)
-          if not m:
-              raise SystemExit('Embedded home JPEG not found')
-          data = base64.b64decode(m.group(1), validate=True)
-          if not (data.startswith(b'\xff\xd8') and data.endswith(b'\xff\xd9')):
-              raise SystemExit('Embedded home JPEG failed validation')
-          print('Embedded JPEG validated:', len(data), 'bytes')
-
-          scripts = re.findall(r'<script[^>]*>(.*?)</script>', html, flags=re.I|re.S)
+          scripts=re.findall(r'<script[^>]*>(.*?)</script>',html,flags=re.I|re.S)
           if not scripts:
               raise SystemExit('No JavaScript found')
-          for i, script in enumerate(scripts, 1):
-              Path(f'/tmp/game-script-{i}.js').write_text(script, encoding='utf-8')
-          print('JavaScript blocks:', len(scripts))
+          for i,script in enumerate(scripts,1):
+              Path(f'/tmp/game-script-{i}.js').write_text(script,encoding='utf-8')
+          print('Validated home image:',len(image),'bytes')
+          print('JavaScript blocks:',len(scripts))
           PY
           for f in /tmp/game-script-*.js; do node --check "$f"; done
 
