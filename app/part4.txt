@@ -17,7 +17,7 @@ show('home');
 </script>
 
 <script>
-(async()=>{try{const ps=[];for(let i=1;i<=1;i++){const r=await fetch(`assets/home${String(i).padStart(2,'0')}.txt`);ps.push(await r.text())}const img=document.querySelector('.home-image');if(img)img.src='data:image/jpeg;base64,'+ps.join('')}catch(e){console.error(e)}})();
+(async()=>{try{const ps=[];for(let i=1;i<=4;i++){const r=await fetch(`assets/home${String(i).padStart(2,'0')}.txt`);ps.push(await r.text())}const img=document.querySelector('.home-image');if(img)img.src='data:image/jpeg;base64,'+ps.join('')}catch(e){console.error(e)}})();
 </script>
 </body>
 </html>
