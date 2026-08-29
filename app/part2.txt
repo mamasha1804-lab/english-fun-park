@@ -1,0 +1,68 @@
+-wrap:wrap;margin:8px 0 14px}.dot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#d1d4d9;color:#667;font-weight:900}.dot.done{background:#6abd3a;color:#fff}.starline{font-size:32px;text-align:center;color:#ffb900;letter-spacing:4px}
+.speaker{border:0;border-radius:50%;width:52px;height:52px;background:#5b2a86;color:#fff;font-size:24px;box-shadow:0 4px 0 #351750}
+.home-screen{background:#102d62;min-height:100vh}.home-image-wrap{max-width:1536px;margin:0 auto;position:relative}.home-image{display:block;width:100%;height:auto}.hotspot{position:absolute;background:transparent;border:0;border-radius:16px}.hotspot:focus{outline:4px solid #fff;box-shadow:0 0 0 7px #572a87}.hs1{left:4%;top:37%;width:17%;height:39%}.hs2{left:22%;top:37%;width:17%;height:39%}.hs3{left:40%;top:37%;width:17%;height:39%}.hs4{left:59%;top:37%;width:19%;height:39%}.hs5{left:79%;top:37%;width:18%;height:39%}.hsprogress{right:3%;bottom:2%;width:24%;height:11%}.hssound{right:8%;top:2%;width:6%;height:9%}.hssettings{right:2%;top:2%;width:6%;height:9%}.brand-overlay{position:absolute;left:3.5%;bottom:2%;width:26%;height:10%;display:flex;align-items:center;justify-content:center;color:transparent}
+.modal{display:none;position:fixed;inset:0;background:rgba(24,19,47,.58);z-index:100;align-items:center;justify-content:center;padding:20px}.modal.show{display:flex}.modal-card{max-width:650px;width:100%;background:#fff8e8;border-radius:28px;border:6px solid white;box-shadow:var(--shadow);padding:24px}.modal-card h2{margin:0 0 12px;color:#5b2a86}.modal-actions{display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}
+@media(max-width:800px){.start-grid,.final-wrap{grid-template-columns:1fr}.word-pictures{grid-template-columns:repeat(2,1fr)}.topbar{height:auto;align-items:flex-start}.brand-mini{font-size:18px}.hud{font-size:14px}.hero-art{min-height:300px}.hero-art .kid,.hero-art .feature{font-size:100px}.hero-art .speech{font-size:18px;left:25%;max-width:220px}.choice{min-width:105px;min-height:105px}.target{width:90px;height:90px;font-size:38px}}
+@media(prefers-reduced-motion:reduce){.coaster{animation:none}.choice{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <section id="home" class="home-screen active screen" aria-label="Главная страница English Fun Park">
+    <div class="home-image-wrap">
+      <img class="home-image" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="English Fun Park: главная страница с пятью игровыми аттракционами" />
+      <button class="hotspot hs1" aria-label="Открыть Hello Carousel" data-open="g1"></button>
+      <button class="hotspot hs2" aria-label="Открыть Name Balloons" data-open="g2"></button>
+      <button class="hotspot hs3" aria-label="Открыть ABC Shooter" data-open="g3"></button>
+      <button class="hotspot hs4" aria-label="Открыть Word Coaster" data-open="g4"></button>
+      <button class="hotspot hs5" aria-label="Открыть Mystery Box" data-open="g5"></button>
+      <button class="hotspot hsprogress" aria-label="Показать прогресс" data-modal="progress"></button>
+      <button class="hotspot hssound" aria-label="Звук" data-action="toggle-sound"></button>
+      <button class="hotspot hssettings" aria-label="Настройки" data-modal="settings"></button>
+    </div>
+  </section>
+
+  <!-- GAME 1 -->
+  <section id="g1" class="screen sky-decor">
+    <div class="topbar"><button class="icon-btn homeBtn">⌂</button><div class="brand-mini">1 HELLO CAROUSEL</div><div class="hud"><span class="ticket">🎟</span><span class="ticketsCount">0</span><button class="speaker speakBtn">🔊</button></div></div>
+    <div class="game-wrap"><div class="marquee">HELLO CAROUSEL<div class="sub-marquee">Choose Hello or Goodbye!</div></div>
+      <div class="start-grid intro">
+        <div class="hero-art"><div class="kid">🧒</div><div class="feature">🎠</div><div class="speech">Hello! Welcome to the carousel!</div></div>
+        <div class="panel instructions"><h3>HOW TO PLAY</h3><ul class="steps"><li><span class="stepno">1</span>Listen to the scene.</li><li><span class="stepno">2</span>Look carefully.</li><li><span class="stepno">3</span>Choose <b>Hello</b> if someone is coming or staying.</li><li><span class="stepno">4</span>Choose <b>Goodbye</b> if someone is leaving.</li></ul><p><b>Подсказка:</b> герой приходит — <b>Hello</b>, уходит — <b>Goodbye</b>.</p><div style="text-align:center"><button class="primary startGame" data-game="g1">LET'S GO!</button></div></div>
+      </div>
+      <div class="playfield gameplay" hidden></div>
+    </div>
+  </section>
+
+  <!-- GAME 2 -->
+  <section id="g2" class="screen sky-decor">
+    <div class="topbar"><button class="icon-btn homeBtn">⌂</button><div class="brand-mini">2 NAME BALLOONS</div><div class="hud"><span class="ticket">🎟</span><span class="ticketsCount">0</span><button class="speaker speakBtn">🔊</button></div></div>
+    <div class="game-wrap"><div class="marquee">NAME BALLOONS<div class="sub-marquee">Learn to say your name!</div></div>
+      <div class="start-grid intro"><div class="hero-art"><div class="kid">👧</div><div class="feature">🎈🎈🎈</div><div class="speech">Hello! What’s your name?</div></div><div class="panel instructions"><h3>HOW TO PLAY</h3><ul class="steps"><li><span class="stepno">1</span>Listen to the question.</li><li><span class="stepno">2</span>Choose the correct answer or build your name.</li><li><span class="stepno">3</span>Say your name.</li><li><span class="stepno">4</span>Earn tickets for correct answers!</li></ul><p>You will practise: <b>Hello!</b> · <b>What’s your name?</b> · <b>My name is…</b> · <b>Nice to meet you!</b></p><div style="text-align:center"><button class="primary startGame" data-game="g2">LET'S GO!</button></div></div></div>
+      <div class="playfield gameplay" hidden></div>
+    </div>
+  </section>
+
+  <!-- GAME 3 -->
+  <section id="g3" class="screen sky-decor">
+    <div class="topbar"><button class="icon-btn homeBtn">⌂</button><div class="brand-mini">3 ABC SHOOTER</div><div class="hud"><span class="ticket">🎟</span><span class="ticketsCount">0</span><button class="speaker speakBtn">🔊</button></div></div>
+    <div class="game-wrap"><div class="marquee">ABC SHOOTER<div class="sub-marquee">Listen and shoot the correct letter!</div></div>
+      <div class="start-grid intro"><div class="hero-art"><div class="kid">🧒</div><div class="feature">🎯</div><div class="speech">Listen to the letter and shoot it!</div></div><div class="panel instructions"><h3>HOW TO PLAY</h3><ul class="steps"><li><span class="stepno">1</span>Listen to the letter.</li><li><span class="stepno">2</span>Find the correct target.</li><li><span class="stepno">3</span>Shoot it with the cannon.</li><li><span class="stepno">4</span>Earn tickets for correct answers!</li></ul><div style="text-align:center"><button class="primary startGame" data-game="g3">LET'S GO!</button></div></div></div>
+      <div class="playfield gameplay" hidden></div>
+    </div>
+  </section>
+
+  <!-- GAME 4 -->
+  <section id="g4" class="screen sky-decor">
+    <div class="topbar"><button class="icon-btn homeBtn">⌂</button><div class="brand-mini">4 WORD COASTER</div><div class="hud"><span class="ticket">🎟</span><span class="ticketsCount">0</span><button class="speaker speakBtn">🔊</button></div></div>
+    <div class="game-wrap"><div class="marquee">WORD COASTER<div class="sub-marquee">Match the word with the correct picture!</div></div>
+      <div class="start-grid intro"><div class="hero-art"><div class="kid">🧒</div><div class="feature">🎢</div><div class="speech">Let’s ride and learn new words!</div></div><div class="panel instructions"><h3>HOW TO PLAY</h3><ul class="steps"><li><span class="stepno">1</span>Listen to the word.</li><li><span class="stepno">2</span>Choose the correct picture.</li><li><span class="stepno">3</span>Send the cart to the right station.</li><li><span class="stepno">4</span>Earn tickets and move forward!</li></ul><p><b>Words:</b> ant, bed, cat, dog, egg, flag, glass, horse.</p><div style="text-align:center"><button class="primary startGame" data-game="g4">LET'S GO!</button></div></div></div>
+      <div class="playfield gameplay" hidden></div>
+    </div>
+  </section>
+
+  <!-- GAME 5 -->
+  <section id="g5" class="screen sky-decor">
+    <div class="topbar"><button class="icon-btn homeBtn">⌂</button><div class="brand-mini">5 MYSTERY BOX</div><div class="hud"><span class="ticket">🎟</span><span class="ticketsCount">0</span><button class="speaker speakBtn">🔊</button></div></div>
+    <div class="game-wrap"><div class="marquee">MYSTERY BOX<div class="sub-marquee">Choose the missing letter and complete the word!</div></div>
+      <div class="start-grid intro"><div class="hero-art"><div class="kid">🧒</div><div class="feature">🎁</div><div class="speech">Let’s open mystery boxes and find the missing letters!</div></div><div class="panel instructions"><h3>HOW TO PLAY</h3><ul class="steps"><li><span class="stepno">1</span>Listen to the word.</li><li><span c
