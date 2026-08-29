@@ -23,12 +23,71 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Build direct static game
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf dist
+          mkdir -p dist/assets
+          cat app/part1.txt app/part2.txt app/part3.txt app/part4.txt > dist/index.html
+          cp assets/home01.txt assets/home02.txt assets/home03.txt assets/home04.txt dist/assets/
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('dist/index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('function startGame(game){state.round=0;', 'function startGame(game){state.round=0;state._score=0;')
+          s = s.replace("; if(game==='g5') setTimeout(()=>show('final'),700);", ';')
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate game files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, re, sys
+
+          html = Path('dist/index.html').read_text(encoding='utf-8')
+          required = [
+              'English Fun Park', 'Учимся с Ларисой Коротаевой',
+              'HELLO CAROUSEL', 'NAME BALLOONS', 'ABC SHOOTER',
+              'WORD COASTER', 'MYSTERY BOX', 'FINAL PRIZE',
+              'ant', 'bed', 'cat', 'dog', 'egg', 'flag', 'glass', 'horse',
+              'id="home"', 'id="g1"', 'id="g2"', 'id="g3"', 'id="g4"', 'id="g5"'
+          ]
+          missing = [x for x in required if x not in html]
+          if missing:
+              raise SystemExit('Missing required game content: ' + ', '.join(missing))
+          if '<iframe' in html.lower():
+              raise SystemExit('Unexpected iframe remained in published game')
+          if 'function startGame(game){state.round=0;state._score=0;' not in html:
+              raise SystemExit('Score reset fix is missing')
+
+          b64 = ''.join(Path(f'dist/assets/home0{i}.txt').read_text(encoding='utf-8').strip() for i in range(1,5))
+          data = base64.b64decode(b64, validate=False)
+          if not (data.startswith(b'\xff\xd8') and data.endswith(b'\xff\xd9')):
+              raise SystemExit('Main-page JPEG data is invalid')
+          print('Main-page JPEG OK:', len(data), 'bytes')
+
+          scripts = re.findall(r'<script[^>]*>(.*?)</script>', html, flags=re.I|re.S)
+          if not scripts:
+              raise SystemExit('No JavaScript found')
+          for i, script in enumerate(scripts, 1):
+              Path(f'/tmp/game-script-{i}.js').write_text(script, encoding='utf-8')
+          print('Found', len(scripts), 'script blocks')
+          PY
+          for f in /tmp/game-script-*.js; do node --check "$f"; done
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: dist
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
