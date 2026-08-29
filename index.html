@@ -1,1 +1,40 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>English Fun Park</title><style>html,body{margin:0;background:#102d62;min-height:100%}</style></head><body><script>(async()=>{try{const files=['app/part1.txt','app/part2.txt','app/part3.txt','app/part4.txt'];const parts=await Promise.all(files.map(async f=>{const r=await fetch(f);if(!r.ok)throw new Error(f);return r.text()}));document.open();document.write(parts.join(''));document.close()}catch(e){document.body.innerHTML='<div style="font:20px Arial;color:white;padding:30px">English Fun Park is loading. Please refresh the page.</div>';console.error(e)}})();</script></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>English Fun Park</title>
+<style>
+html,body{margin:0;width:100%;height:100%;background:#102d62;overflow:hidden}
+#game{position:fixed;inset:0;width:100%;height:100%;border:0;background:#102d62}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:#102d62;color:#fff;font-family:Arial,sans-serif;text-align:center;padding:24px;z-index:2}
+.spinner{width:52px;height:52px;border:6px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="loading"><div class="spinner"></div><div>English Fun Park загружается…</div></div>
+<iframe id="game" title="English Fun Park" allow="autoplay"></iframe>
+<script>
+(async()=>{
+  const loading=document.getElementById('loading');
+  const frame=document.getElementById('game');
+  try{
+    const files=['app/part1.txt','app/part2.txt','app/part3.txt','app/part4.txt'];
+    const parts=[];
+    for(const file of files){
+      const r=await fetch(file+'?v=20260829-2',{cache:'no-store'});
+      if(!r.ok) throw new Error(file+' '+r.status);
+      parts.push(await r.text());
+    }
+    frame.addEventListener('load',()=>{loading.style.display='none'},{once:true});
+    frame.srcdoc=parts.join('');
+    setTimeout(()=>{loading.style.display='none'},4000);
+  }catch(e){
+    loading.innerHTML='<div style="font-size:22px;font-weight:700">Не удалось загрузить игру.</div><div style="font-size:16px">Обновите страницу ещё раз.</div>';
+    console.error(e);
+  }
+})();
+</script>
+</body>
+</html>
