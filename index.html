@@ -10,51 +10,60 @@ html,body{margin:0;width:100%;height:100%;background:#102d62;overflow:hidden}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:#102d62;color:#fff;font-family:Arial,sans-serif;text-align:center;padding:24px;z-index:2}
 .spinner{width:52px;height:52px;border:6px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.retry{border:0;border-radius:14px;padding:12px 18px;font-weight:700;font-size:17px;cursor:pointer}
 </style>
 </head>
 <body>
 <div id="loading"><div class="spinner"></div><div>English Fun Park загружается…</div></div>
-<iframe id="game" title="English Fun Park" allow="autoplay"></iframe>
+<iframe id="game" title="English Fun Park" allow="autoplay" sandbox="allow-scripts allow-same-origin allow-modals allow-forms"></iframe>
 <script>
 (async()=>{
   const loading=document.getElementById('loading');
   const frame=document.getElementById('game');
+  const BASE='https://mamasha1804-lab.github.io/english-fun-park/';
+  const VERSION='20260829-7';
+  const fail=(msg)=>{
+    loading.innerHTML='<div style="font-size:22px;font-weight:700">Не удалось загрузить игру.</div><div style="font-size:16px">'+msg+'</div><button class="retry" onclick="location.reload()">ОБНОВИТЬ</button>';
+  };
   try{
-    const appFiles=['app/part1.txt','app/part2.txt','app/part3.txt','app/part4.txt'];
+    const files=['app/part1.txt','app/part2.txt','app/part3.txt','app/part4.txt'];
     const parts=[];
-    for(const file of appFiles){
-      const r=await fetch(file+'?v=20260829-4',{cache:'no-store'});
+    for(const file of files){
+      const r=await fetch(BASE+file+'?v='+VERSION,{cache:'no-store'});
       if(!r.ok) throw new Error(file+' '+r.status);
       parts.push(await r.text());
     }
-    const homeParts=[];
-    for(let i=1;i<=4;i++){
-      const file='assets/home'+String(i).padStart(2,'0')+'.txt';
-      const r=await fetch(file+'?v=20260829-4',{cache:'no-store'});
-      if(!r.ok) throw new Error(file+' '+r.status);
-      homeParts.push(await r.text());
-    }
-    const homeSrc='data:image/jpeg;base64,'+homeParts.join('');
+    let html=parts.join('');
+    html=html.replace('<head>','<head><base href="'+BASE+'">');
+    html=html.replace('function startGame(game){state.round=0;','function startGame(game){state.round=0;state._score=0;');
+    html=html.replace("; if(game==='g5') setTimeout(()=>show('final'),700);",";");
+
+    let loaded=false;
     frame.addEventListener('load',()=>{
-      try{
-        const img=frame.contentDocument && frame.contentDocument.querySelector('.home-image');
-        if(img){
-          img.onload=()=>{loading.style.display='none'};
-          img.src=homeSrc;
-          if(img.complete && img.naturalWidth>1) loading.style.display='none';
-        }else{
+      loaded=true;
+      const started=Date.now();
+      const waitForHome=()=>{
+        try{
+          const doc=frame.contentDocument;
+          const img=doc && doc.querySelector('.home-image');
+          if(img && img.complete && img.naturalWidth>10){
+            loading.style.display='none';
+            return;
+          }
+        }catch(e){}
+        if(Date.now()-started>12000){
           loading.style.display='none';
+          return;
         }
-      }catch(e){
-        console.error(e);
-        loading.style.display='none';
-      }
+        setTimeout(waitForHome,200);
+      };
+      waitForHome();
     },{once:true});
-    frame.srcdoc=parts.join('');
-    setTimeout(()=>{loading.style.display='none'},8000);
+    frame.srcdoc=html;
+    setTimeout(()=>{if(!loaded) fail('Проверьте интернет и нажмите «Обновить».');},15000);
   }catch(e){
-    loading.innerHTML='<div style="font-size:22px;font-weight:700">Не удалось загрузить игру.</div><div style="font-size:16px">Обновите страницу ещё раз.</div>';
     console.error(e);
+    fail('Проверьте интернет и нажмите «Обновить».');
   }
 })();
 </script>
