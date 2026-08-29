@@ -1,0 +1,46 @@
+lass="stepno">2</span>Look at the word with a missing letter.</li><li><span class="stepno">3</span>Choose the correct letter.</li><li><span class="stepno">4</span>Open the box and earn tickets!</li></ul><p><b>Words:</b> ant, bed, cat, dog, egg, flag, glass, horse.</p><div style="text-align:center"><button class="primary startGame" data-game="g5">LET'S GO!</button></div></div></div>
+      <div class="playfield gameplay" hidden></div>
+    </div>
+  </section>
+
+  <section id="final" class="screen sky-decor">
+    <div class="topbar"><button class="icon-btn homeBtn">⌂</button><div class="brand-mini">FINAL PRIZE</div><div class="hud"><span class="ticket">🎟</span><span class="ticketsCount">0</span></div></div>
+    <div class="game-wrap"><div class="marquee">FINAL PRIZE<div class="sub-marquee">English Fun Park Champion!</div></div><div class="final-wrap">
+      <div class="panel"><div class="chest">🧰✨</div><h2 style="text-align:center;font-size:36px;color:#5b2a86">WELL DONE!</h2><p style="text-align:center;font-size:22px;font-weight:900">You completed all five attractions and collected your tickets!</p><div class="starline">★★★★★</div></div>
+      <div class="diploma"><div style="font-size:18px;font-weight:900">YOUR DIPLOMA</div><h2>ENGLISH FUN PARK<br>CHAMPION</h2><p>This diploma is proudly presented to</p><div id="diplomaName" class="name-line">English Star</div><p>for completing all games and learning new English words!</p><p>Greetings · Introductions · Letters A–H · Vocabulary · Spelling</p><button id="printDiploma" class="primary">PRINT</button></div>
+    </div></div>
+  </section>
+</div>
+
+<div id="feedback" class="feedback" aria-live="polite"><div class="feedback-card"><div id="feedbackTitle" class="big">Correct!</div><div id="feedbackText" style="font-size:24px;margin:12px 0"></div><div id="feedbackReward" class="reward"></div><div style="margin-top:18px"><button id="feedbackNext" class="primary">NEXT →</button></div></div></div>
+
+<div id="progressModal" class="modal"><div class="modal-card"><h2>MY PROGRESS</h2><div id="progressList"></div><div class="modal-actions"><button class="secondary closeModal">CLOSE</button></div></div></div>
+<div id="settingsModal" class="modal"><div class="modal-card"><h2>SETTINGS</h2><label style="display:flex;gap:12px;align-items:center;font-size:20px;font-weight:900"><input id="soundToggle" type="checkbox" checked style="width:26px;height:26px"> Sound / British English voice</label><p style="margin-top:18px">The game uses your browser’s English (UK) voice when available.</p><div class="modal-actions"><button class="secondary closeModal">CLOSE</button></div></div></div>
+
+<script>
+(() => {
+const state={tickets:0,sound:true,completed:{g1:false,g2:false,g3:false,g4:false,g5:false},scores:{},currentGame:null,round:0,pending:null,playerName:'English Star'};
+const gameNames={g1:'Hello Carousel',g2:'Name Balloons',g3:'ABC Shooter',g4:'Word Coaster',g5:'Mystery Box'};
+const words=[
+ {word:'ant',icon:'🐜',letter:'A'}, {word:'bed',icon:'🛏️',letter:'B'}, {word:'cat',icon:'🐱',letter:'C'}, {word:'dog',icon:'🐶',letter:'D'},
+ {word:'egg',icon:'🥚',letter:'E'}, {word:'flag',icon:'🚩',letter:'F'}, {word:'glass',icon:'🥛',letter:'G'}, {word:'horse',icon:'🐴',letter:'H'}
+];
+const names=['Anna','Ben','Tom','Sam','Kate','Leo'];
+const g1scenes=[
+ ['arrive','A girl comes to the carousel.','Hello!'],['leave','A boy waves and goes home.','Goodbye!'],['arrive','A new boy joins his friends.','Hello!'],['leave','A girl finishes her ride and leaves.','Goodbye!'],['arrive','Two friends meet at the carousel.','Hello!'],['leave','A boy says bye and walks away.','Goodbye!'],['arrive','A child comes to the carousel.','Hello!'],['leave','A girl says bye to the park worker.','Goodbye!'],['arrive','Friends meet before another ride.','Hello!'],['leave','The carousel closes. Everyone waves goodbye.','Goodbye!']
+];
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');state.currentGame=id;updateHud();window.scrollTo(0,0)}
+function updateHud(){document.querySelectorAll('.ticketsCount').forEach(x=>x.textContent=state.tickets)}
+function voice(text){ if(!state.sound||!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text);u.lang='en-GB';u.rate=.95; const vs=speechSynthesis.getVoices(); const gb=vs.filter(v=>/en[-_ ]?GB|British/i.test(v.lang+' '+v.name)); const male=gb.find(v=>/male|daniel|george|ryan|arthur|oliver/i.test(v.name))||gb[0]; if(male)u.voice=male; speechSynthesis.speak(u)}
+function setFeedback(ok,text,reward,nextCb){const f=document.getElementById('feedback');document.getElementById('feedbackTitle').textContent=ok?'CORRECT!':'OOPS!';document.getElementById('feedbackTitle').style.color=ok?'#3f9b1f':'#d4423b';document.getElementById('feedbackText').textContent=text;document.getElementById('feedbackReward').textContent=reward||'';document.getElementById('feedbackNext').textContent=ok?'NEXT →':'TRY AGAIN';state.pending=nextCb;f.classList.add('show')}
+document.getElementById('feedbackNext').addEventListener('click',()=>{document.getElementById('feedback').classList.remove('show');if(state.pending){const cb=state.pending;state.pending=null;cb()}});
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+function progressDots(n=10){return '<div class="progress-dots">'+Array.from({length:n},(_,i)=>`<span class="dot ${i<state.round?'done':''}">${i+1}</span>`).join('')+'</div>'}
+function finishGame(game,score){state.completed[game]=true;state.scores[game]=score; const field=document.querySelector(`#${game} .gameplay`);field.innerHTML=`<div class="panel" style="text-align:center;margin:auto;max-width:700px"><div style="font-size:70px">🎉🏆🎟️</div><h2 style="font-size:44px;color:#5b2a86;margin:8px">WELL DONE!</h2><div class="starline">${'★'.repeat(Math.max(1,Math.round(score/2)))}${'☆'.repeat(5-Math.max(1,Math.round(score/2)))}</div><p style="font-size:28px;font-weight:900">${score}/10</p><p style="font-size:24px">You earned ${score} tickets!</p><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap"><button class="secondary replay">PLAY AGAIN</button><button class="primary nextGame">${game==='g5'?'FINAL PRIZE →':'NEXT GAME →'}</button></div></div>`;field.querySelector('.replay').onclick=()=>startGame(game);field.querySelector('.nextGame').onclick=()=>{if(game==='g5')show('final');else show('g'+(Number(game[1])+1))}; if(game==='g5') setTimeout(()=>show('final'),700);}
+function award(ok,onOk,onRetry){if(ok){state.tickets++;updateHud();setFeedback(true,'Great job!','🎟 +1 ticket',onOk)}else{setFeedback(false,'That’s not right. Try again!','',onRetry)}}
+function commonHead(field,question,spoken){field.innerHTML=`<div class="roundbar"><button class="icon-btn backHome">← HOME</button><div class="round-pill">${state.round+1} / 10</div><button class="speaker repeat">🔊</button></div>${progressDots(10)}<div class="prompt">${question}</div><div class="content"></div>`;field.querySelector('.backHome').onclick=()=>show('home');field.querySelector('.repeat').onclick=()=>voice(spoken);voice(spoken);return field.querySelector('.content')}
+function startGame(game){state.round=0;const sec=document.getElementById(game);sec.querySelector('.intro').hidden=true;const field=sec.querySelector('.gameplay');field.hidden=false;field.style.display='block';renderRound(game)}
+function renderRound(game){if(state.round>=10){const score=state._score||0;state._score=0;finishGame(game,score);return} const field=document.querySelector(`#${game} .gameplay`);if(game==='g1')renderG1(field);if(game==='g2')renderG2(field);if(game==='g3')renderG3(field);if(game==='g4')renderG4(field);if(game==='g5')renderG5(field)}
+function nextRound(game){state.round++;renderRound(game)}
+function renderG1(field){const [kind,desc,ans]=g1scenes[state.round];const c=commonHead(field,'Look at the scene. Choose Hello or Goodbye.','Look!');c.innerHTML=`<div class="scene"><div class="scene-label">${desc}</div><div class="carousel">🎠</div><div class="person ${kind}">${kind==='arrive'?'🧒':'🧒'}</div><div class="arrow">${kind==='arrive'?'←':'→'}</div></div><div class="choices"><button class="choice" data-a="Hello!" style="background:#eaf9e3">HELLO!</button><button class="choice" data-a="Goodbye!" style="background:#ffe9e7">GOODBYE!</button></div>`;c.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{const ok=b.dataset.a===ans;voice(ok?ans:'Try again');award(ok,()=>{state._score=(state._score||0)+1;nextRound('g1')},()=>renderRound('g1'))})}
+function renderG2(field){const target=names[state.round%names.length];const buildRound=state.round===8||state.round===9;const spoken=buildRound?'What’s your name?':`My name is ${target}.`;const c=commonHead(field,buildRound?'Now it’s your turn! Build your name.':"What’s your name? Listen and choose the correct name.",spoken);if(buildRound){if(!state.playerName||state.playerName==='English Star')state.playerName='An
