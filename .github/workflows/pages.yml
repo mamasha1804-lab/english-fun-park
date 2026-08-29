@@ -36,12 +36,16 @@ jobs:
           from pathlib import Path
           import base64, re
 
-          # Each homeXX.txt file is a separately encoded binary slice. Decoding each
-          # slice first and only then concatenating the binary data preserves the JPEG.
           pieces=[]
           for i in range(1,5):
               s=Path(f'assets/home0{i}.txt').read_text(encoding='utf-8').strip()
-              pieces.append(base64.b64decode(s, validate=True))
+              # These files are Base64 encodings of separate binary slices and some
+              # were saved without terminal '=' padding. Restore padding per slice,
+              # decode each slice independently, then concatenate the binary bytes.
+              s += '=' * ((4 - len(s) % 4) % 4)
+              part=base64.b64decode(s, validate=True)
+              print(f'fragment {i}: {len(part)} bytes')
+              pieces.append(part)
           image=b''.join(pieces)
           Path('dist/assets/home.jpg').write_bytes(image)
           if not image.startswith(b'\xff\xd8'):
@@ -54,14 +58,12 @@ jobs:
           html=html.replace('function startGame(game){state.round=0;', 'function startGame(game){state.round=0;state._score=0;')
           html=html.replace("; if(game==='g5') setTimeout(()=>show('final'),700);", ';')
 
-          # Replace the 1x1 placeholder with the validated artwork file.
           placeholder='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='
           if placeholder in html:
               html=html.replace(placeholder, 'assets/home.jpg', 1)
           else:
               html=html.replace('src="assets/home.png"', 'src="assets/home.jpg"', 1)
 
-          # Remove obsolete browser-side Base64 fragment loader. It is no longer needed.
           html=re.sub(r'<script>\s*\(async\(\)=>\{try\{const ps=\[\];for\(let i=1;i<=4;i\+\+\).*?</script>', '', html, flags=re.S)
           p.write_text(html, encoding='utf-8')
           print('Home JPEG rebuilt successfully:', len(image), 'bytes')
@@ -77,7 +79,6 @@ jobs:
 
           html=Path('dist/index.html').read_text(encoding='utf-8')
           image=Path('dist/assets/home.jpg').read_bytes()
-
           required=[
             'English Fun Park','Учимся с Ларисой Коротаевой',
             'HELLO CAROUSEL','NAME BALLOONS','ABC SHOOTER','WORD COASTER','MYSTERY BOX','FINAL PRIZE',
@@ -90,7 +91,7 @@ jobs:
               raise SystemExit('Missing required game content: '+', '.join(missing))
           if '<iframe' in html.lower():
               raise SystemExit('Unexpected iframe in deployed game')
-          if 'assets/home01.txt' in html or 'assets/home02.txt' in html or 'assets/home03.txt' in html or 'assets/home04.txt' in html:
+          if any(f'assets/home0{i}.txt' in html for i in range(1,5)):
               raise SystemExit('Obsolete home-image loader remains')
           if 'src="assets/home.jpg"' not in html:
               raise SystemExit('Home image reference is missing')
