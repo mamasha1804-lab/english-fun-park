@@ -31,25 +31,37 @@ jobs:
           rm -rf dist
           mkdir -p dist/assets
           cat app/part1.txt app/part2.txt app/part3.txt app/part4.txt > dist/index.html
-          cat assets/ultra01.b64 assets/ultra02.b64 assets/ultra03.b64 assets/ultra04.b64 assets/ultra05.b64 | base64 -d > dist/assets/home.jpg
 
-          python3 - <<'PY'
+          if [ -f assets/home-original.png ]; then
+            cp assets/home-original.png dist/assets/home.png
+            HOME_ASSET="assets/home.png"
+          else
+            cat assets/ultra01.b64 assets/ultra02.b64 assets/ultra03.b64 assets/ultra04.b64 assets/ultra05.b64 | base64 -d > dist/assets/home.jpg
+            HOME_ASSET="assets/home.jpg"
+          fi
+
+          HOME_ASSET="$HOME_ASSET" python3 - <<'PY'
           from pathlib import Path
-          import re
+          import os, re
 
-          image=Path('dist/assets/home.jpg').read_bytes()
-          if not image.startswith(b'\xff\xd8') or not image.endswith(b'\xff\xd9'):
-              raise SystemExit('Home JPEG is invalid or incomplete')
-
+          asset=os.environ['HOME_ASSET']
           p=Path('dist/index.html')
           html=p.read_text(encoding='utf-8')
           html=html.replace('function startGame(game){state.round=0;', 'function startGame(game){state.round=0;state._score=0;')
           html=html.replace("; if(game==='g5') setTimeout(()=>show('final'),700);", ';')
           placeholder='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='
-          html=html.replace(placeholder, 'assets/home.jpg', 1)
+          html=html.replace(placeholder, asset, 1)
           html=re.sub(r'<script>\s*\(async\(\)=>\{try\{const ps=\[\];for\(let i=1;i<=4;i\+\+\).*?</script>', '', html, flags=re.S)
           p.write_text(html, encoding='utf-8')
-          print('Home JPEG:', len(image), 'bytes')
+
+          image=Path('dist/'+asset).read_bytes()
+          if asset.endswith('.png'):
+              if not image.startswith(b'\x89PNG\r\n\x1a\n'):
+                  raise SystemExit('Original home PNG is invalid')
+          else:
+              if not image.startswith(b'\xff\xd8') or not image.endswith(b'\xff\xd9'):
+                  raise SystemExit('Fallback home JPEG is invalid')
+          print('Home artwork:', asset, len(image), 'bytes')
           PY
 
       - name: Validate complete game
@@ -60,16 +72,15 @@ jobs:
           from pathlib import Path
           import re
           html=Path('dist/index.html').read_text(encoding='utf-8')
-          image=Path('dist/assets/home.jpg').read_bytes()
           required=['English Fun Park','Учимся с Ларисой Коротаевой','HELLO CAROUSEL','NAME BALLOONS','ABC SHOOTER','WORD COASTER','MYSTERY BOX','FINAL PRIZE','ant','bed','cat','dog','egg','flag','glass','horse','id="home"','id="g1"','id="g2"','id="g3"','id="g4"','id="g5"','id="final"']
           missing=[x for x in required if x not in html]
           if missing: raise SystemExit('Missing: '+', '.join(missing))
           if '<iframe' in html.lower(): raise SystemExit('Unexpected iframe')
-          if 'src="assets/home.jpg"' not in html: raise SystemExit('Home image reference missing')
-          if not (image.startswith(b'\xff\xd8') and image.endswith(b'\xff\xd9')): raise SystemExit('JPEG validation failed')
+          if not ('src="assets/home.png"' in html or 'src="assets/home.jpg"' in html):
+              raise SystemExit('Home image reference missing')
           scripts=re.findall(r'<script[^>]*>(.*?)</script>', html, flags=re.I|re.S)
           for i,script in enumerate(scripts,1): Path(f'/tmp/game-script-{i}.js').write_text(script,encoding='utf-8')
-          print('Validated:', len(image), 'bytes; JS blocks:', len(scripts))
+          print('Validated JS blocks:',len(scripts))
           PY
           for f in /tmp/game-script-*.js; do node --check "$f"; done
 
