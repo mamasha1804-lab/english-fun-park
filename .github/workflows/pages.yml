@@ -32,8 +32,11 @@ jobs:
           mkdir -p dist/assets
           cat app/part1.txt app/part2.txt app/part3.txt app/part4.txt > dist/index.html
 
-          if [ -f assets/home-original.png ]; then
-            cp assets/home-original.png dist/assets/home.png
+          if [ -f "assets/home-original.png" ]; then
+            cp "assets/home-original.png" dist/assets/home.png
+            HOME_ASSET="assets/home.png"
+          elif [ -f "assets/home-original (1).png" ]; then
+            cp "assets/home-original (1).png" dist/assets/home.png
             HOME_ASSET="assets/home.png"
           else
             cat assets/ultra01.b64 assets/ultra02.b64 assets/ultra03.b64 assets/ultra04.b64 assets/ultra05.b64 | base64 -d > dist/assets/home.jpg
@@ -58,6 +61,8 @@ jobs:
           if asset.endswith('.png'):
               if not image.startswith(b'\x89PNG\r\n\x1a\n'):
                   raise SystemExit('Original home PNG is invalid')
+              if len(image) < 1000000:
+                  raise SystemExit('Original home PNG unexpectedly small')
           else:
               if not image.startswith(b'\xff\xd8') or not image.endswith(b'\xff\xd9'):
                   raise SystemExit('Fallback home JPEG is invalid')
